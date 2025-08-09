@@ -1,11 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors');  // add this line
+const cors = require('cors');
 
 const app = express();
 
 app.use(cors());               // enable CORS for all origins
 app.use(bodyParser.json());
+
+// Handle CORS preflight requests for all routes
+app.options('*', cors());
 
 const roomsByCode = {}; // use Redis/DB in production
 
@@ -18,6 +21,11 @@ app.post('/register-room', (req, res) => {
 });
 
 app.get('/rooms/by-code/:code', (req, res) => {
+  // Explicitly set CORS headers (extra safety)
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
   const id = roomsByCode[req.params.code];
   if (!id) return res.status(404).send({ error: 'not found' });
   res.send({ roomId: id });
@@ -25,4 +33,4 @@ app.get('/rooms/by-code/:code', (req, res) => {
 
 app.use(express.static('public')); // optional: serve meeting.html for quick tests
 
-app.listen(3000, () => console.log('server listening 3000'));
+app.listen(3000, () => console.log('server listening on port 3000'));
